@@ -22,7 +22,7 @@ clean generate → detect round-trip (see [diff/](diff/)).
 
 ```go
 for _, v := range twister.Permute("paypal") {
-    fmt.Println(v.Name, v.Fuzzer)   // paypa1 homoglyph · papyal transposition · paypall repetition · …
+    fmt.Println(v.Name, v.Fuzzer)   // sorted by name: papyal transposition · paypa1 homoglyph · paypall repetition · …
 }
 
 // select techniques and supply a TLD list for tld-swap (twister ships none):

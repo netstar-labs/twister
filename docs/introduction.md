@@ -1,8 +1,8 @@
 # Meet twister — the permutation, not the near-miss
 
 Every phishing kit begins with a lie told in a domain name. `paypa1.com` for
-`paypal.com`; `gooogle`; `arnazon`; `paypaⅼ` with a look-alike Cyrillic character
-you would swear was an `l`. Before a defender can catch one of those, someone has to
+`paypal.com`; `gooogle`; `pаypal` with a look-alike Cyrillic `а` you would swear
+was the real letter. Before a defender can catch one of those, someone has to
 enumerate the space of what a squatter *would* register — and that is the offensive
 half of the canonical tool **dnstwist**: give it a brand and it *generates* the
 thousands of plausible permutations. twister is named for that lineage and keeps
@@ -15,7 +15,7 @@ twister is a pure-Go, zero-dependency **permutation generator**. You give it a
 registrable label — `paypal`, `google`, whatever you are protecting — and it returns
 the set of look-alike labels an attacker might register, each tagged with the
 technique that produced it. It walks a dozen fuzzers: dropping a character
-(`paypa1`→`papal`), doubling one, swapping neighbours (`papyal`), a keyboard slip to
+(`paypal`→`papal`), doubling one, swapping neighbours (`papyal`), a keyboard slip to
 an adjacent key, a hyphen or a dot slipped in, a vowel swapped, a Unicode homoglyph,
 a single flipped bit, a different TLD. Each edit-based fuzzer makes *exactly one*
 change, so every variant is one edit-distance step from the seed — which is what
