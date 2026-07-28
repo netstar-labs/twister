@@ -12,7 +12,7 @@ network.
  label ─▶ normalize  │ omission  repetition  transposition  …     │
         (lower/trim) │ replacement  insertion  addition           │ each returns
              │       │ hyphenation  subdomain  vowel-swap          │ raw variants
-             ▼       │ homoglyph  bitsquatting  tld-swap           │ (may dup / repeat seed)
+             ▼       │ homoglyph  leet  bitsquatting  tld-swap     │ (may dup / repeat seed)
           []rune ───▶└──────────────────┬─────────────────────────┘
                                         ▼
                        dedup (seed pre-seeded) + first-fuzzer-owns
@@ -31,7 +31,7 @@ exclusion, ordering) so the fuzzers stay trivially simple.
 | Piece | Responsibility |
 |---|---|
 | `twister.go` | The public API (`Variant`, `Options`, `Permute`, `PermuteWith`), the fuzzer `registry`, `FuzzerNames`, and the dedup/sort dispatch. |
-| `fuzzers.go` | The twelve fuzzers and the four rune-edit helpers (`withDeleted`/`withInserted`/`withReplaced`/`withSwapped`), each returning a fresh string. |
+| `fuzzers.go` | The thirteen fuzzers and the four rune-edit helpers (`withDeleted`/`withInserted`/`withReplaced`/`withSwapped`), each returning a fresh string. |
 | `tables.go` | The two embedded data tables: QWERTY key adjacency and the homoglyph confusables map. |
 
 ## The fuzzers
@@ -56,6 +56,7 @@ distance 1 from the seed:
 | Fuzzer | Source | Edit |
 |---|---|---|
 | `homoglyph` | curated single-rune UTS-39 confusables map | one rune substitution |
+| `leet` | leetspeak numeral map (`a→4`, `e→3`, `o→0`, …) | one rune substitution |
 | `bitsquatting` | flip each bit of each ASCII byte, keep valid label chars | one substitution |
 | `tld-swap` | caller-supplied TLD list (`Options.TLDs`; twister ships none) | append `.tld` (not single-edit) |
 
@@ -80,7 +81,8 @@ adjacency *table* that powers `insertion` and `replacement`.
 ## Deliberately out (YAGNI)
 
 - **No resolution / enrichment** — no DNS, whois, geoip, MX, banners, ports. That is
-  dnstwist's networked half and a consumer's job; twister never touches the network.
+  the networked half of squat-hunting and a consumer's job; twister never touches the
+  network.
 - **No dictionary / keyword / combosquat** (`paypal-secure`) — a different signal;
   add an optional fuzzer later if a wordlist is supplied.
 - **No homophone / plural / common-misspelling** dictionaries — data-heavy; deferred.

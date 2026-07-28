@@ -133,6 +133,14 @@ func fuzzHomoglyph(r []rune, _ Options) []string {
 	return eachReplacement(r, func(c rune) []rune { return homoglyphs[c] })
 }
 
+// fuzzLeet substitutes each character with its leetspeak numeral (see [leet]) — the
+// "reads as" look-alike (paypal → p4ypal), one position at a time so each variant is
+// a single edit and twist detects it at distance 1. Multi-position leet (p4yp4l) is
+// the composition of several and falls outside this single-edit fuzzer.
+func fuzzLeet(r []rune, _ Options) []string {
+	return eachReplacement(r, func(c rune) []rune { return leet[c] })
+}
+
 // fuzzBitsquatting flips each bit of each ASCII byte, keeping only flips that land
 // on a valid label character — the class of typo caused by a single-bit memory or
 // transmission error.

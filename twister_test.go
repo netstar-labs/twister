@@ -104,6 +104,16 @@ func TestHomoglyph(t *testing.T) {
 	}
 }
 
+func TestLeet(t *testing.T) {
+	// b->8, a->4, t->7 — one leet substitution each, and none of b/a/t is a
+	// homoglyph, so the leet fuzzer alone yields exactly these three.
+	got := namesFor("bat", "leet")
+	want := []string{"8at", "b4t", "ba7"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("leet(bat) = %v\nwant %v", got, want)
+	}
+}
+
 func TestBitsquattingValidLabels(t *testing.T) {
 	got := PermuteWith("amazon", Options{Fuzzers: []string{"bitsquatting"}})
 	if len(got) == 0 {
