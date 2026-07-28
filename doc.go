@@ -23,4 +23,11 @@
 // from the seed and is detected as a near-miss by the sibling twist package — a
 // clean generate → detect round-trip. (tld-swap, which appends a TLD, is not an
 // edit-based fuzzer.)
+//
+// On top of that single-edit core sit four opt-in, off-by-default multi-edit
+// fuzzers — combosquat, aggressive multi-substitution, multi-homoglyph, and
+// homophone (see [ExtendedFuzzerNames] and the [Options] fields Words, MaxEdits, and
+// Homophones). Each is behind an explicit [Options] field, and every [Variant]
+// records its [Variant.EditCount], so [Permute] stays the tight dist-1 set while a
+// consumer can route a multi-edit variant to a detector that can recover it.
 package twister

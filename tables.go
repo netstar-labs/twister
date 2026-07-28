@@ -73,3 +73,32 @@ var leet = map[rune][]rune{
 	'a': {'4'}, 'b': {'8'}, 'e': {'3'}, 'g': {'9'}, 'i': {'1'},
 	'l': {'1'}, 'o': {'0'}, 's': {'5'}, 't': {'7'}, 'z': {'2'},
 }
+
+// multiHomoglyphs maps a multi-rune sequence to the single-glyph look-alikes it
+// renders as (and one reverse). Each rewrite is two Damerau-Levenshtein edits — a
+// substitution plus an insertion or deletion — so these are deliberately excluded
+// from the single-rune [homoglyphs] core and drive the opt-in multi-homoglyph
+// fuzzer instead. Embedded, not a dependency. See fuzzMultiHomoglyph.
+var multiHomoglyphs = map[string][]string{
+	"rn": {"m"},  // "corn" → "com"
+	"vv": {"w"},  // "vvow" → "wow"
+	"cl": {"d"},  // "clock" → "dock"
+	"nn": {"m"},  // "inn" → "im"
+	"m":  {"rn"}, // reverse of rn→m: "com" → "corn"
+}
+
+// homophones maps a sound-alike substring to its phonetic equivalents — the
+// embedded default table for the opt-in homophone fuzzer, overridable per key via
+// [Options.Homophones]. A rewrite's edit count is the Levenshtein distance between
+// the key and its replacement (ph↔f is two edits, c↔k is one), tagged truthfully on
+// each variant. The class is defined by phonetic equality, not edit distance, so it
+// routes to a phonetic detector rather than twist@1. Embedded, not a dependency.
+var homophones = map[string][]string{
+	"ph": {"f"},       // "phone" → "fone"
+	"f":  {"ph"},      // "fon" → "phon"
+	"c":  {"k"},       // "cat" → "kat"
+	"k":  {"c", "ck"}, // "kat" → "cat"; "bak" → "back"
+	"s":  {"z"},       // "sap" → "zap"
+	"z":  {"s"},       // "zap" → "sap"
+	"ck": {"k"},       // "back" → "bak"
+}

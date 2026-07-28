@@ -17,6 +17,22 @@ Every edit-based fuzzer makes exactly one edit, so each variant is one
 Damerau-Levenshtein step from the seed — and `twist` detects it as a near-miss, a
 clean generate → detect round-trip (see [diff/](diff/)).
 
+An opt-in v0.2 layer adds four **multi-edit** fuzzers — combosquat
+(`paypal-login`), aggressive multi-substitution (`p4yp4l`), multi-character
+homoglyphs (`rn`→`m`), and homophones (`ph`↔`f`). Each is off by default behind an
+explicit `Options` field, and every `Variant` is tagged with its `EditCount` so the
+tight dist-1 core `Permute` returns stays exactly that.
+
+```go
+// combosquat and aggressive are gated on their Options field, like tld-swap:
+twister.PermuteWith("paypal", twister.Options{
+    Words:    []string{"login", "secure"},   // → paypal-login, secure-paypal, paypallogin, …
+    MaxEdits: 2,                              // → p4yp4l, … (aggressive multi-substitution)
+})
+// multi-homoglyph and homophone emit unconditionally, so name them explicitly:
+twister.PermuteWith("paypal", twister.Options{Fuzzers: []string{"multi-homoglyph", "homophone"}})
+```
+
 ## Quick start
 
 ```go
@@ -49,9 +65,10 @@ printf 'paypal\ngoogle\n' | go run ./app/twister permute -tld com,net
 
 | File | Purpose |
 |---|---|
-| [twister.go](twister.go) | `Variant`, `Options`, `Permute`/`PermuteWith`, the fuzzer registry and dedup/sort dispatch, `FuzzerNames` |
-| [fuzzers.go](fuzzers.go) | the thirteen fuzzers (edit-based + data-backed) and the rune-edit helpers |
-| [tables.go](tables.go) | the embedded QWERTY adjacency and homoglyph confusables tables |
+| [twister.go](twister.go) | `Variant`, `Options`, `Permute`/`PermuteWith`, the fuzzer registries and dedup/sort dispatch, `FuzzerNames`/`ExtendedFuzzerNames` |
+| [fuzzers.go](fuzzers.go) | the thirteen single-edit core fuzzers (edit-based + data-backed) and the rune-edit helpers |
+| [extended.go](extended.go) | the four opt-in multi-edit fuzzers (combosquat, aggressive, multi-homoglyph, homophone) and their helpers |
+| [tables.go](tables.go) | the embedded QWERTY adjacency, homoglyph, multi-homoglyph, and homophone tables |
 | [doc.go](doc.go) | package doc — the name metaphor (generates, not detects) and the pure-generation scope |
 | [app/twister/](app/twister/main.go) | the CLI — `permute` · `version` |
 | [diff/](diff/README.md) | the twister ↔ twist differential harness (nested module, keeps the root zero-dep) |
