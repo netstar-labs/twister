@@ -3,6 +3,7 @@ package twister
 import (
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 )
 
@@ -174,6 +175,26 @@ func TestEmptyAndShort(t *testing.T) {
 func TestUnknownFuzzerIgnored(t *testing.T) {
 	if v := PermuteWith("google", Options{Fuzzers: []string{"nope"}}); v != nil {
 		t.Errorf("unknown fuzzer produced %v, want nil", v)
+	}
+}
+
+func TestNoBoundaryHyphenOrDot(t *testing.T) {
+	// Regression for the audit's F1: bitsquatting can flip an ASCII byte to '-',
+	// and omission/transposition can expose a boundary hyphen on a seed that
+	// already contains one — all produce unregistrable labels that must be dropped.
+	for _, seed := range []string{"ibm", "team", "x-ray", "e-shop", "a-b-c", "mmm"} {
+		for _, v := range PermuteWith(seed, Options{TLDs: []string{"com"}}) {
+			if strings.HasPrefix(v.Name, "-") || strings.HasSuffix(v.Name, "-") ||
+				strings.HasPrefix(v.Name, ".") || strings.HasSuffix(v.Name, ".") {
+				t.Errorf("seed %q: emitted boundary-invalid label %q (%s)", seed, v.Name, v.Fuzzer)
+			}
+		}
+	}
+	// The specific reproductions from the audit must be gone.
+	for _, v := range Permute("ibm") {
+		if v.Name == "ib-" {
+			t.Error("ib- still emitted for ibm")
+		}
 	}
 }
 

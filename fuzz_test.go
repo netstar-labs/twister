@@ -21,8 +21,8 @@ func FuzzPermute(f *testing.F) {
 		norm := strings.ToLower(strings.TrimSpace(label))
 		seen := make(map[string]bool, len(a))
 		for i, v := range a {
-			if v.Name == "" {
-				t.Errorf("empty variant for %q", label)
+			if !validLabel(v.Name) {
+				t.Errorf("emitted boundary-invalid label %q for %q", v.Name, label)
 			}
 			if v.Name == norm {
 				t.Errorf("seed %q not excluded", norm)

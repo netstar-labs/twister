@@ -82,15 +82,18 @@ func PermuteWith(label string, o Options) []Variant {
 	}
 	r := []rune(label)
 
-	seen := map[string]struct{}{label: {}} // exclude the seed
-	var out []Variant
+	// Rough pre-size: each fuzzer emits O(len) variants; avoids repeated rehash/grow.
+	est := len(r) * 8
+	seen := make(map[string]struct{}, est+1)
+	seen[label] = struct{}{} // exclude the seed
+	out := make([]Variant, 0, est)
 	for _, name := range names {
 		fn, ok := registry[name]
 		if !ok {
 			continue
 		}
 		for _, v := range fn(r, o) {
-			if v == "" {
+			if !validLabel(v) {
 				continue
 			}
 			if _, dup := seen[v]; dup {
@@ -100,6 +103,21 @@ func PermuteWith(label string, o Options) []Variant {
 			out = append(out, Variant{Name: v, Fuzzer: name})
 		}
 	}
+	if len(out) == 0 {
+		return nil // no fuzzer produced anything (e.g. only unknown names)
+	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return out
+}
+
+// validLabel rejects the empty string and any label whose first or last character
+// is a hyphen or dot — an unregistrable host label. Some fuzzers can otherwise
+// emit one: bitsquatting can flip an ASCII byte to '-', and omission/transposition
+// can expose a hyphen at a boundary of a seed that already contains one.
+func validLabel(v string) bool {
+	if v == "" {
+		return false
+	}
+	first, last := v[0], v[len(v)-1]
+	return first != '-' && first != '.' && last != '-' && last != '.'
 }
