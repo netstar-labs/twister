@@ -38,6 +38,7 @@ var FuzzerNames = []string{
 	"subdomain",
 	"vowel-swap",
 	"homoglyph",
+	"leet",
 	"bitsquatting",
 	"tld-swap",
 }
@@ -56,6 +57,7 @@ var registry = map[string]func(r []rune, o Options) []string{
 	"subdomain":     fuzzSubdomain,
 	"vowel-swap":    fuzzVowelSwap,
 	"homoglyph":     fuzzHomoglyph,
+	"leet":          fuzzLeet,
 	"bitsquatting":  fuzzBitsquatting,
 	"tld-swap":      fuzzTLDSwap,
 }
@@ -84,7 +86,7 @@ func PermuteWith(label string, o Options) []Variant {
 
 	// Rough pre-size to the expected variant count (a fixed base from the
 	// length-independent fuzzers plus ~26/rune), avoiding repeated map rehash and
-	// slice grow. Measured fit: go→67, google→186, verylongbrandname→466.
+	// slice grow. Measured fit: go→68, google→188, verylongbrandname→470.
 	est := 32 + len(r)*26
 	seen := make(map[string]struct{}, est+1)
 	seen[label] = struct{}{} // exclude the seed

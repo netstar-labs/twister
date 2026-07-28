@@ -2,16 +2,15 @@
 
 Typosquat **permutation generation** for Go — **hand it a label and it enumerates
 the look-alikes a squatter might register**, pure standard library, no
-dependencies. Named after `dnstwist`, and it works the tool's offensive way round:
-where the sibling `twist` *detects* a near-miss, twister *generates* the candidates.
-twist ↔ twister, detect ↔ generate — the same edit-distance space, walked in
-opposite directions.
+dependencies. It is the counter to the sibling `twist`: where `twist` *detects* a
+near-miss, twister *generates* the candidates. twist ↔ twister, detect ↔ generate —
+the same edit-distance space, walked in opposite directions.
 
 ```
 seed label ─▶ PermuteWith ─▶ fan out over fuzzers ─▶ dedup + drop seed ─▶ sort ─▶ []Variant
                               │                                                    │
    omission · repetition · transposition · replacement · insertion · addition     ▼
-   hyphenation · subdomain · vowel-swap · homoglyph · bitsquatting · tld-swap   {Name, Fuzzer}
+   hyphenation · subdomain · vowel-swap · homoglyph · leet · bitsquatting · tld-swap  {Name, Fuzzer}
 ```
 
 Every edit-based fuzzer makes exactly one edit, so each variant is one
@@ -51,7 +50,7 @@ printf 'paypal\ngoogle\n' | go run ./app/twister permute -tld com,net
 | File | Purpose |
 |---|---|
 | [twister.go](twister.go) | `Variant`, `Options`, `Permute`/`PermuteWith`, the fuzzer registry and dedup/sort dispatch, `FuzzerNames` |
-| [fuzzers.go](fuzzers.go) | the twelve fuzzers (edit-based + data-backed) and the rune-edit helpers |
+| [fuzzers.go](fuzzers.go) | the thirteen fuzzers (edit-based + data-backed) and the rune-edit helpers |
 | [tables.go](tables.go) | the embedded QWERTY adjacency and homoglyph confusables tables |
 | [doc.go](doc.go) | package doc — the name metaphor (generates, not detects) and the pure-generation scope |
 | [app/twister/](app/twister/main.go) | the CLI — `permute` · `version` |

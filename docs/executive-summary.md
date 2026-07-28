@@ -6,11 +6,11 @@ name it enumerates the look-alike variants an attacker might register, each tagg
 with the technique that produced it.
 
 **Why it exists.** Defending a brand against look-alike domains starts with knowing
-what the look-alikes *are*. The canonical tool, dnstwist, both generates those
-permutations and then resolves/enriches them over the network. twister carves out
-just the generation half as a clean, embeddable Go library: deterministic,
-network-free, and testable, so any consumer can wrap the networked stages it needs
-around a permutation engine it can trust and unit-test.
+what the look-alikes *are*. Full squat-hunting tools both generate those permutations
+and then resolve/enrich them over the network. twister carves out just the generation
+half as a clean, embeddable Go library: deterministic, network-free, and testable, so
+any consumer can wrap the networked stages it needs around a permutation engine it can
+trust and unit-test.
 
 **How it fits.** twister and `twist` are a matched pair on the same edit-distance
 lineage, pointing opposite ways:
@@ -30,5 +30,5 @@ consumer. twister is pure generation: a label in, a candidate set out.
 
 **Shape.** Two public entry points — `Permute(label)` and `PermuteWith(label,
 Options)` — returning `[]Variant{Name, Fuzzer}`, deduplicated, seed-excluded, and
-sorted. Twelve fuzzers, standard library only, small embedded data tables. A thin
+sorted. Thirteen fuzzers, standard library only, small embedded data tables. A thin
 `twister permute` CLI wraps it for shell use.

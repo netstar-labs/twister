@@ -42,12 +42,12 @@ label. Most fuzzers emit a bare label; `subdomain` emits a dotted label and
 ### Fuzzers
 
 `omission` · `repetition` · `transposition` · `replacement` · `insertion` ·
-`addition` · `hyphenation` · `subdomain` · `vowel-swap` · `homoglyph` ·
+`addition` · `hyphenation` · `subdomain` · `vowel-swap` · `homoglyph` · `leet` ·
 `bitsquatting` · `tld-swap`
 
 The nine edit-based fuzzers each make exactly one edit, so every variant is one
-Damerau-Levenshtein step from the seed; `homoglyph` and `bitsquatting` are single
-substitutions too. `tld-swap` requires `Options.TLDs` (twister ships no TLD list) —
+Damerau-Levenshtein step from the seed; `homoglyph`, `leet`, and `bitsquatting` are
+single substitutions too. `tld-swap` requires `Options.TLDs` (twister ships no TLD list) —
 it yields nothing under `Permute`.
 
 ## CLI

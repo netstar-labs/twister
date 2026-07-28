@@ -14,11 +14,11 @@ import (
 // editFuzzers are the techniques that make exactly one rune edit (insert, delete,
 // substitute, or adjacent transpose) — so each variant is distance 1 from the
 // seed. tld-swap (appends .tld) and the multi-emit data fuzzers are excluded only
-// where they are not single-edit; homoglyph and bitsquatting are single rune
+// where they are not single-edit; homoglyph, leet, and bitsquatting are single rune
 // substitutions and belong here too.
 var editFuzzers = []string{
 	"omission", "repetition", "transposition", "replacement", "insertion",
-	"addition", "hyphenation", "subdomain", "vowel-swap", "homoglyph", "bitsquatting",
+	"addition", "hyphenation", "subdomain", "vowel-swap", "homoglyph", "leet", "bitsquatting",
 }
 
 func TestGenerateThenDetect(t *testing.T) {
