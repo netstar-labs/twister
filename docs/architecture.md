@@ -45,7 +45,7 @@ distance 1 from the seed:
 | `repetition` | double a char | `ggoogle`, `gooogle` |
 | `transposition` | swap adjacent chars | `ogogle`, `goolge` |
 | `replacement` | substitute a keyboard-adjacent key | `hoogle`, `foogle` |
-| `insertion` | insert a keyboard-adjacent key beside an interior char | `gooogle`, `gioogle` |
+| `insertion` | insert a keyboard-adjacent key beside an interior char | `gioogle`, `g0oogle` |
 | `addition` | append a–z | `googlea`…`googlez` |
 | `hyphenation` | insert a hyphen | `g-oogle`, `goo-gle` |
 | `subdomain` | insert a dot | `g.oogle`, `goo.gle` |

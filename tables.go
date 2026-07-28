@@ -1,22 +1,33 @@
 package twister
 
-// keyboard is a QWERTY physical-adjacency map: each key to the keys next to it.
-// It feeds the insertion and replacement fuzzers — a "keyboard slip" is a press of
-// a neighbouring key. Embedded, not a dependency.
-var keyboard = map[rune]string{
-	'1': "2q", '2': "3wq1", '3': "4ew2", '4': "5re3", '5': "6tr4",
-	'6': "7yt5", '7': "8uy6", '8': "9iu7", '9': "0oi8", '0': "po9",
-	'q': "12wa", 'w': "3esaq2", 'e': "4rdsw3", 'r': "5tfde4", 't': "6ygfr5",
-	'y': "7uhgt6", 'u': "8ijhy7", 'i': "9okju8", 'o': "0plki9", 'p': "lo0",
-	'a': "qwsz", 's': "edxzaw", 'd': "rfcxse", 'f': "tgvcdr", 'g': "yhbvft",
-	'h': "ujnbgy", 'j': "ikmnhu", 'k': "olmji", 'l': "kop",
-	'z': "asx", 'x': "zsdc", 'c': "xdfv", 'v': "cfgb", 'b': "vghn",
-	'n': "bhjm", 'm': "njk",
+// keyboard maps each key to the keys physically adjacent on a QWERTY layout,
+// precomputed as rune slices once at init so a lookup allocates nothing. It feeds
+// the insertion and replacement fuzzers — a "keyboard slip" is a press of a
+// neighbouring key. Embedded, not a dependency.
+var keyboard = buildKeyboard()
+
+func buildKeyboard() map[rune][]rune {
+	rows := map[rune]string{
+		'1': "2q", '2': "3wq1", '3': "4ew2", '4': "5re3", '5': "6tr4",
+		'6': "7yt5", '7': "8uy6", '8': "9iu7", '9': "0oi8", '0': "po9",
+		'q': "12wa", 'w': "3esaq2", 'e': "4rdsw3", 'r': "5tfde4", 't': "6ygfr5",
+		'y': "7uhgt6", 'u': "8ijhy7", 'i': "9okju8", 'o': "0plki9", 'p': "lo0",
+		'a': "qwsz", 's': "edxzaw", 'd': "rfcxse", 'f': "tgvcdr", 'g': "yhbvft",
+		'h': "ujnbgy", 'j': "ikmnhu", 'k': "olmji", 'l': "kop",
+		'z': "asx", 'x': "zsdc", 'c': "xdfv", 'v': "cfgb", 'b': "vghn",
+		'n': "bhjm", 'm': "njk",
+	}
+	m := make(map[rune][]rune, len(rows))
+	for k, v := range rows {
+		m[k] = []rune(v)
+	}
+	return m
 }
 
 // keyboardAdjacent returns the keys physically adjacent to c on a QWERTY layout.
+// The returned slice is shared and read-only — callers must not mutate it.
 func keyboardAdjacent(c rune) []rune {
-	return []rune(keyboard[c])
+	return keyboard[c]
 }
 
 // homoglyphs maps an ASCII rune to a curated subset of its single-rune Unicode

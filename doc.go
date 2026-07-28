@@ -19,7 +19,8 @@
 // dependencies. twister operates on the registrable label only: a caller splits a
 // domain into label + eTLD, permutes the label, and — for the tld-swap fuzzer —
 // supplies its own TLD list, since twister ships none. Every edit-based fuzzer
-// makes exactly one edit, so each variant is one Damerau-Levenshtein step from the
-// seed and is detected as a near-miss by the sibling twist package — a clean
-// generate → detect round-trip.
+// makes exactly one edit, so each such variant is one Damerau-Levenshtein step
+// from the seed and is detected as a near-miss by the sibling twist package — a
+// clean generate → detect round-trip. (tld-swap, which appends a TLD, is not an
+// edit-based fuzzer.)
 package twister

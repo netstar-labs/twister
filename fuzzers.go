@@ -41,15 +41,35 @@ func fuzzTransposition(r []rune, _ Options) []string {
 	return out
 }
 
-// fuzzReplacement substitutes each character with each of its keyboard neighbours.
-func fuzzReplacement(r []rune, _ Options) []string {
+// eachReplacement emits withReplaced at every position for each candidate rune
+// that cand returns for the rune there — the shared shape of the substitution
+// fuzzers.
+func eachReplacement(r []rune, cand func(rune) []rune) []string {
 	var out []string
 	for i := range r {
-		for _, c := range keyboardAdjacent(r[i]) {
+		for _, c := range cand(r[i]) {
 			out = append(out, withReplaced(r, i, c))
 		}
 	}
 	return out
+}
+
+// eachSeparator inserts sep between characters, skipping any position adjacent to
+// a blocked character — the shared shape of the hyphenation and subdomain fuzzers.
+func eachSeparator(r []rune, sep rune, blocked string) []string {
+	var out []string
+	for i := 1; i < len(r); i++ {
+		if strings.ContainsRune(blocked, r[i-1]) || strings.ContainsRune(blocked, r[i]) {
+			continue
+		}
+		out = append(out, withInserted(r, i, sep))
+	}
+	return out
+}
+
+// fuzzReplacement substitutes each character with each of its keyboard neighbours.
+func fuzzReplacement(r []rune, _ Options) []string {
+	return eachReplacement(r, keyboardAdjacent)
 }
 
 // fuzzInsertion inserts each interior character's keyboard neighbours beside it —
@@ -78,39 +98,18 @@ func fuzzAddition(r []rune, _ Options) []string {
 // fuzzHyphenation inserts a hyphen between characters, never beside an existing
 // hyphen (which would make an invalid label).
 func fuzzHyphenation(r []rune, _ Options) []string {
-	var out []string
-	for i := 1; i < len(r); i++ {
-		if r[i-1] == '-' || r[i] == '-' {
-			continue
-		}
-		out = append(out, withInserted(r, i, '-'))
-	}
-	return out
+	return eachSeparator(r, '-', "-")
 }
 
 // fuzzSubdomain inserts a dot between characters, splitting the label into a
 // subdomain — never beside an existing dot or hyphen.
 func fuzzSubdomain(r []rune, _ Options) []string {
-	var out []string
-	for i := 1; i < len(r); i++ {
-		if r[i-1] == '-' || r[i] == '-' || r[i-1] == '.' || r[i] == '.' {
-			continue
-		}
-		out = append(out, withInserted(r, i, '.'))
-	}
-	return out
+	return eachSeparator(r, '.', "-.")
 }
 
-var vowels = []rune{'a', 'e', 'i', 'o', 'u'}
+const vowels = "aeiou"
 
-func isVowel(c rune) bool {
-	for _, v := range vowels {
-		if c == v {
-			return true
-		}
-	}
-	return false
-}
+func isVowel(c rune) bool { return strings.ContainsRune(vowels, c) }
 
 // fuzzVowelSwap replaces each vowel with each other vowel.
 func fuzzVowelSwap(r []rune, _ Options) []string {
@@ -131,13 +130,7 @@ func fuzzVowelSwap(r []rune, _ Options) []string {
 // fuzzHomoglyph substitutes each character with each of its single-rune Unicode
 // confusables (see [homoglyphs]).
 func fuzzHomoglyph(r []rune, _ Options) []string {
-	var out []string
-	for i := range r {
-		for _, g := range homoglyphs[r[i]] {
-			out = append(out, withReplaced(r, i, g))
-		}
-	}
-	return out
+	return eachReplacement(r, func(c rune) []rune { return homoglyphs[c] })
 }
 
 // fuzzBitsquatting flips each bit of each ASCII byte, keeping only flips that land
