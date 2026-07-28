@@ -82,8 +82,10 @@ func PermuteWith(label string, o Options) []Variant {
 	}
 	r := []rune(label)
 
-	// Rough pre-size: each fuzzer emits O(len) variants; avoids repeated rehash/grow.
-	est := len(r) * 8
+	// Rough pre-size to the expected variant count (a fixed base from the
+	// length-independent fuzzers plus ~26/rune), avoiding repeated map rehash and
+	// slice grow. Measured fit: go→67, google→186, verylongbrandname→466.
+	est := 32 + len(r)*26
 	seen := make(map[string]struct{}, est+1)
 	seen[label] = struct{}{} // exclude the seed
 	out := make([]Variant, 0, est)
