@@ -1,12 +1,13 @@
 // Command twister generates typosquat permutations of a domain label.
 //
-//	twister permute [-f a,b,c] [-tld com,net,org] [labels...]   # variants per label (stdin if none)
+//	twister permute [-f a,b,c] [-tld com,net,org] [-words login,secure] [-maxedits 2] [labels...]
 //	twister version
 //
 // -f restricts to a comma-separated set of fuzzers (default all; see the twister
-// package's FuzzerNames). -tld feeds the tld-swap fuzzer. Labels are the command
+// package's FuzzerNames). -tld feeds the tld-swap fuzzer, -words feeds combosquat,
+// and -maxedits (>=2) enables the aggressive fuzzer. Labels are the command
 // arguments, or one per line on stdin if none are given. Each variant prints as:
-// label <tab> variant <tab> fuzzer.
+// label <tab> variant <tab> fuzzer <tab> editcount.
 package main
 
 import (
@@ -54,11 +55,15 @@ func permute(args []string) error {
 	fs := flag.NewFlagSet("permute", flag.ExitOnError)
 	fuzzers := fs.String("f", "", "comma-separated fuzzers (default all)")
 	tlds := fs.String("tld", "", "comma-separated TLDs for the tld-swap fuzzer")
+	words := fs.String("words", "", "comma-separated keywords for the combosquat fuzzer")
+	maxEdits := fs.Int("maxedits", 0, "max positions the aggressive fuzzer substitutes at once (>=2)")
 	fs.Parse(args)
 
 	o := twister.Options{
-		Fuzzers: splitList(*fuzzers),
-		TLDs:    splitList(*tlds),
+		Fuzzers:  splitList(*fuzzers),
+		TLDs:     splitList(*tlds),
+		Words:    splitList(*words),
+		MaxEdits: *maxEdits,
 	}
 
 	w := bufio.NewWriter(os.Stdout)
@@ -68,7 +73,7 @@ func permute(args []string) error {
 			return
 		}
 		for _, v := range twister.PermuteWith(label, o) {
-			fmt.Fprintf(w, "%s\t%s\t%s\n", label, v.Name, v.Fuzzer)
+			fmt.Fprintf(w, "%s\t%s\t%s\t%d\n", label, v.Name, v.Fuzzer, v.EditCount)
 		}
 	}
 

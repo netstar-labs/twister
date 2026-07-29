@@ -26,8 +26,12 @@
 //
 // On top of that single-edit core sit four opt-in, off-by-default multi-edit
 // fuzzers — combosquat, aggressive multi-substitution, multi-homoglyph, and
-// homophone (see [ExtendedFuzzerNames] and the [Options] fields Words, MaxEdits, and
-// Homophones). Each is behind an explicit [Options] field, and every [Variant]
-// records its [Variant.EditCount], so [Permute] stays the tight dist-1 set while a
-// consumer can route a multi-edit variant to a detector that can recover it.
+// homophone. combosquat and aggressive are data-gated: they sit in [FuzzerNames] but
+// stay silent until [Options.Words] / [Options.MaxEdits] is set (exactly like
+// tld-swap). multi-homoglyph and homophone emit from embedded tables
+// unconditionally, so they are kept out of [FuzzerNames] (see [ExtendedFuzzerNames])
+// and run only when named in [Options.Fuzzers]; [Options.Homophones] merely overrides
+// the homophone table. Every [Variant] records its [Variant.EditCount], so [Permute]
+// stays the tight dist-1 set while a consumer can route a multi-edit variant to a
+// detector that can recover it.
 package twister

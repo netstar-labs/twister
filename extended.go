@@ -1,7 +1,8 @@
 package twister
 
 import (
-	"sort"
+	"maps"
+	"slices"
 	"strings"
 	"unicode/utf8"
 )
@@ -29,6 +30,7 @@ type rawVariant struct {
 // after [registry]: a name resolves to a single-edit core fuzzer first, then to an
 // extension here.
 var extRegistry = map[string]func(r []rune, o Options) []rawVariant{
+	"tld-swap":        fuzzTLDSwap,
 	"combosquat":      fuzzCombosquat,
 	"aggressive":      fuzzAggressive,
 	"multi-homoglyph": fuzzMultiHomoglyph,
@@ -60,7 +62,12 @@ func fuzzCombosquat(r []rune, o Options) []rawVariant {
 	out := make([]rawVariant, 0, len(o.Words)*5)
 	for _, w := range o.Words {
 		w = strings.ToLower(strings.TrimSpace(w))
-		if w == "" {
+		// Skip a keyword that would assemble an invalid host label: interior
+		// whitespace, or a leading/trailing separator that abuts combosquat's own
+		// '-'/'.' affix ("secure login" -> "paypal-secure login"; ".x" -> "paypal..x").
+		if w == "" || strings.ContainsAny(w, " \t\n\r") ||
+			strings.HasPrefix(w, "-") || strings.HasPrefix(w, ".") ||
+			strings.HasSuffix(w, "-") || strings.HasSuffix(w, ".") {
 			continue
 		}
 		for _, f := range []string{
@@ -94,11 +101,11 @@ func fuzzAggressive(r []rune, o Options) []rawVariant {
 	// Per-position substitution candidates, deterministic order, original rune
 	// excluded; positions with no candidate are skipped so combinations stay dense.
 	var positions []int
-	cands := make(map[int][]rune, len(r))
+	var posCands [][]rune
 	for i := range r {
 		if c := substitutionCandidates(r[i]); len(c) > 0 {
 			positions = append(positions, i)
-			cands[i] = c
+			posCands = append(posCands, c)
 		}
 	}
 	maxK := o.MaxEdits
@@ -107,14 +114,13 @@ func fuzzAggressive(r []rune, o Options) []rawVariant {
 	}
 
 	var out []rawVariant
-	capped := false
-	for k := 2; k <= maxK && !capped; k++ {
-		forEachCombination(len(positions), k, func(combo []int) bool {
+	for k := 2; k <= maxK; k++ {
+		ok := forEachCombination(len(positions), k, func(combo []int) bool {
 			pos := make([]int, k)
 			lists := make([][]rune, k)
 			for j, ci := range combo {
 				pos[j] = positions[ci]
-				lists[j] = cands[positions[ci]]
+				lists[j] = posCands[ci]
 			}
 			return forEachProduct(lists, func(choice []rune) bool {
 				vr := make([]rune, len(r))
@@ -125,13 +131,15 @@ func fuzzAggressive(r []rune, o Options) []rawVariant {
 				if d := osaDistance(r, vr); d >= 2 {
 					out = append(out, rawVariant{name: string(vr), edits: d})
 					if len(out) >= MaxAggressiveVariants {
-						capped = true
-						return false
+						return false // hit the cap; stop this and the outer k-loop
 					}
 				}
 				return true
 			})
 		})
+		if !ok {
+			break // forEachCombination stopped early -> cap reached
+		}
 	}
 	return out
 }
@@ -141,14 +149,22 @@ func fuzzAggressive(r []rune, o Options) []rawVariant {
 // two edits (a substitution plus an insertion or deletion), so it is excluded from
 // the single-rune homoglyph core. Detected by skeleton equality, not twist@1.
 func fuzzMultiHomoglyph(r []rune, _ Options) []rawVariant {
+	return applySubstitutionTable(r, multiHomoglyphs)
+}
+
+// applySubstitutionTable rewrites r by every table rule at every matching
+// position — one variant per (key-position, replacement) — tagged with the rule's
+// edit cost. Keys are visited in sorted order for deterministic output. It is the
+// shared kernel of the multi-homoglyph and homophone fuzzers.
+func applySubstitutionTable(r []rune, table map[string][]string) []rawVariant {
 	var out []rawVariant
-	for _, key := range sortedStringKeys(multiHomoglyphs) {
+	for _, key := range slices.Sorted(maps.Keys(table)) {
 		kr := []rune(key)
 		for i := 0; i+len(kr) <= len(r); i++ {
-			if !runesEqualAt(r, i, kr) {
+			if !slices.Equal(r[i:i+len(kr)], kr) {
 				continue
 			}
-			for _, rep := range multiHomoglyphs[key] {
+			for _, rep := range table[key] {
 				out = append(out, rawVariant{
 					name:  replaceRange(r, i, len(kr), []rune(rep)),
 					edits: editDistance(key, rep),
@@ -169,22 +185,7 @@ func fuzzHomophone(r []rune, o Options) []rawVariant {
 	if len(o.Homophones) > 0 {
 		table = mergeHomophones(homophones, o.Homophones)
 	}
-	var out []rawVariant
-	for _, key := range sortedStringKeys(table) {
-		kr := []rune(key)
-		for i := 0; i+len(kr) <= len(r); i++ {
-			if !runesEqualAt(r, i, kr) {
-				continue
-			}
-			for _, rep := range table[key] {
-				out = append(out, rawVariant{
-					name:  replaceRange(r, i, len(kr), []rune(rep)),
-					edits: editDistance(key, rep),
-				})
-			}
-		}
-	}
-	return out
+	return applySubstitutionTable(r, table)
 }
 
 // --- extended-fuzzer helpers ----------------------------------------------------
@@ -279,37 +280,11 @@ func replaceRange(r []rune, start, n int, repl []rune) string {
 	return string(out)
 }
 
-// runesEqualAt reports whether the runes of r starting at i equal seq.
-func runesEqualAt(r []rune, i int, seq []rune) bool {
-	for j, c := range seq {
-		if r[i+j] != c {
-			return false
-		}
-	}
-	return true
-}
-
-// sortedStringKeys returns the keys of m in ascending order, so a fuzzer that ranges
-// a table produces deterministic output regardless of Go's map iteration order.
-func sortedStringKeys(m map[string][]string) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
-}
-
 // mergeHomophones overlays extra onto base, extra winning per key, without mutating
 // either — the merge behind [Options.Homophones] extending the embedded defaults.
 func mergeHomophones(base, extra map[string][]string) map[string][]string {
-	out := make(map[string][]string, len(base)+len(extra))
-	for k, v := range base {
-		out[k] = v
-	}
-	for k, v := range extra {
-		out[k] = v
-	}
+	out := maps.Clone(base)
+	maps.Copy(out, extra)
 	return out
 }
 

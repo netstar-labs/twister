@@ -11,9 +11,10 @@ type Variant struct {
 	Name   string // the permuted label (a bare label, or label.tld for tld-swap)
 	Fuzzer string // the technique: "omission", "transposition", "homoglyph", …
 	// EditCount is the Damerau-Levenshtein distance from the seed. Every single-edit
-	// core fuzzer sets 1; the multi-edit extensions (combosquat, aggressive,
-	// multi-homoglyph, homophone) set the edit cost of the rewrite they applied
-	// (>1), so a consumer can route each variant to the detector that can recover it.
+	// core fuzzer sets 1; the multi-edit extensions (tld-swap, combosquat, aggressive,
+	// multi-homoglyph, homophone) set the true edit cost of the rewrite they applied —
+	// usually >1, though a homophone swap like c→k is a single edit — so a consumer can
+	// route each variant to the detector that can recover it.
 	EditCount int
 }
 
@@ -46,12 +47,13 @@ type Options struct {
 // the "keyboard" fuzzer) is not a standalone entry — it powers insertion and
 // replacement.
 //
-// The first thirteen are the single-edit core: each makes exactly one edit, so
-// [Permute] over them is the tight dist-1 set. combosquat and aggressive are
-// multi-edit but data-gated — silent until [Options.Words] / [Options.MaxEdits] is
-// set (like tld-swap is silent without [Options.TLDs]) — so they are safe in the
-// default list without breaking Permute's dist-1 invariant. The other multi-edit
-// extensions, which emit unconditionally, are in [ExtendedFuzzerNames] instead.
+// The first twelve are the single-edit core: each makes exactly one edit, so
+// [Permute] over them is the tight dist-1 set. tld-swap, combosquat, and aggressive
+// are multi-edit but data-gated — silent until [Options.TLDs] / [Options.Words] /
+// [Options.MaxEdits] is set — so they are safe in the default list without breaking
+// Permute's dist-1 invariant, and each carries its true edit count (they live in
+// [extRegistry], not the EditCount-1 [registry]). The unconditional multi-edit
+// extensions are in [ExtendedFuzzerNames] instead.
 var FuzzerNames = []string{
 	"omission",
 	"repetition",
@@ -95,7 +97,6 @@ var registry = map[string]func(r []rune, o Options) []string{
 	"homoglyph":     fuzzHomoglyph,
 	"leet":          fuzzLeet,
 	"bitsquatting":  fuzzBitsquatting,
-	"tld-swap":      fuzzTLDSwap,
 }
 
 // Permute generates the single-edit core permutation set for label, deduplicated

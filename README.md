@@ -10,7 +10,7 @@ the same edit-distance space, walked in opposite directions.
 seed label ─▶ PermuteWith ─▶ fan out over fuzzers ─▶ dedup + drop seed ─▶ sort ─▶ []Variant
                               │                                                    │
    omission · repetition · transposition · replacement · insertion · addition     ▼
-   hyphenation · subdomain · vowel-swap · homoglyph · leet · bitsquatting · tld-swap  {Name, Fuzzer}
+   hyphenation · subdomain · vowel-swap · homoglyph · leet · bitsquatting · tld-swap  {Name, Fuzzer, EditCount}
 ```
 
 Every edit-based fuzzer makes exactly one edit, so each variant is one
@@ -19,9 +19,11 @@ clean generate → detect round-trip (see [diff/](diff/)).
 
 An opt-in v0.2 layer adds four **multi-edit** fuzzers — combosquat
 (`paypal-login`), aggressive multi-substitution (`p4yp4l`), multi-character
-homoglyphs (`rn`→`m`), and homophones (`ph`↔`f`). Each is off by default behind an
-explicit `Options` field, and every `Variant` is tagged with its `EditCount` so the
-tight dist-1 core `Permute` returns stays exactly that.
+homoglyphs (`rn`→`m`), and homophones (`ph`↔`f`). All are off by default —
+combosquat and aggressive are data-gated on an `Options` field (like `tld-swap`),
+multi-homoglyph and homophone emit unconditionally so you enable them by name — and
+every `Variant` is tagged with its `EditCount` so the tight dist-1 core `Permute`
+returns stays exactly that.
 
 ```go
 // combosquat and aggressive are gated on their Options field, like tld-swap:
@@ -30,7 +32,8 @@ twister.PermuteWith("paypal", twister.Options{
     MaxEdits: 2,                              // → p4yp4l, … (aggressive multi-substitution)
 })
 // multi-homoglyph and homophone emit unconditionally, so name them explicitly:
-twister.PermuteWith("paypal", twister.Options{Fuzzers: []string{"multi-homoglyph", "homophone"}})
+twister.PermuteWith("corn", twister.Options{Fuzzers: []string{"multi-homoglyph", "homophone"}})
+// → com (rn→m, EditCount 2) · korn (c→k, EditCount 1)
 ```
 
 ## Quick start
@@ -48,8 +51,9 @@ twister.PermuteWith("paypal", twister.Options{
 ```
 
 ```sh
-go run ./app/twister permute paypal                     # variant per line: label⇥variant⇥fuzzer
+go run ./app/twister permute paypal                     # variant per line: label⇥variant⇥fuzzer⇥editcount
 go run ./app/twister permute -f homoglyph,omission paypal
+go run ./app/twister permute -words login,secure -maxedits 2 paypal   # combosquat + aggressive
 printf 'paypal\ngoogle\n' | go run ./app/twister permute -tld com,net
 ```
 
@@ -66,9 +70,9 @@ printf 'paypal\ngoogle\n' | go run ./app/twister permute -tld com,net
 | File | Purpose |
 |---|---|
 | [twister.go](twister.go) | `Variant`, `Options`, `Permute`/`PermuteWith`, the fuzzer registries and dedup/sort dispatch, `FuzzerNames`/`ExtendedFuzzerNames` |
-| [fuzzers.go](fuzzers.go) | the thirteen single-edit core fuzzers (edit-based + data-backed) and the rune-edit helpers |
+| [fuzzers.go](fuzzers.go) | the twelve single-edit core fuzzers (edit-based + data-backed) plus `tld-swap`, and the rune-edit helpers |
 | [extended.go](extended.go) | the four opt-in multi-edit fuzzers (combosquat, aggressive, multi-homoglyph, homophone) and their helpers |
-| [tables.go](tables.go) | the embedded QWERTY adjacency, homoglyph, multi-homoglyph, and homophone tables |
+| [tables.go](tables.go) | the five embedded tables: QWERTY adjacency, homoglyph, leet numeral, multi-homoglyph, and homophone |
 | [doc.go](doc.go) | package doc — the name metaphor (generates, not detects) and the pure-generation scope |
 | [app/twister/](app/twister/main.go) | the CLI — `permute` · `version` |
 | [diff/](diff/README.md) | the twister ↔ twist differential harness (nested module, keeps the root zero-dep) |

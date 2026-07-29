@@ -21,11 +21,12 @@ vs := twister.PermuteWith("paypal", twister.Options{
 
 | Symbol | Meaning |
 |---|---|
-| `Permute(label string) []Variant` | full core set, deduped, seed excluded, sorted by name |
-| `PermuteWith(label string, o Options) []Variant` | same, with fuzzer selection and a TLD list |
-| `Variant{Name, Fuzzer string}` | one permutation and the technique that produced it |
-| `Options{Fuzzers []string, TLDs []string}` | `Fuzzers` empty = all; `TLDs` feeds `tld-swap` only |
-| `FuzzerNames []string` | the valid fuzzer names, in run order |
+| `Permute(label string) []Variant` | tight dist-1 core set, deduped, seed excluded, sorted by name |
+| `PermuteWith(label string, o Options) []Variant` | same, with fuzzer selection and the opt-in data (TLDs/Words/MaxEdits/Homophones) |
+| `Variant{Name, Fuzzer string; EditCount int}` | one permutation, the technique that produced it, and its edit distance from the seed |
+| `Options{Fuzzers, TLDs, Words []string; MaxEdits int; Homophones map[string][]string}` | `Fuzzers` empty = all in `FuzzerNames`; `TLDs`/`Words`/`MaxEdits` data-gate `tld-swap`/`combosquat`/`aggressive`; `Homophones` overrides the homophone table |
+| `FuzzerNames []string` | the default-run fuzzer names, in run order |
+| `ExtendedFuzzerNames []string` | the unconditional multi-edit fuzzers (`multi-homoglyph`, `homophone`) — run only when named in `Options.Fuzzers` |
 
 **Contract.** The seed is lower-cased and trimmed. Output is deterministic
 (same input → same sorted set), deduplicated, and never contains the seed. Each
@@ -41,31 +42,49 @@ label. Most fuzzers emit a bare label; `subdomain` emits a dotted label and
 
 ### Fuzzers
 
+**Single-edit core** (every variant is exactly one Damerau-Levenshtein step from the
+seed — the tight dist-1 set `Permute` returns):
+
 `omission` · `repetition` · `transposition` · `replacement` · `insertion` ·
 `addition` · `hyphenation` · `subdomain` · `vowel-swap` · `homoglyph` · `leet` ·
-`bitsquatting` · `tld-swap`
+`bitsquatting`
 
-The nine edit-based fuzzers each make exactly one edit, so every variant is one
-Damerau-Levenshtein step from the seed; `homoglyph`, `leet`, and `bitsquatting` are
-single substitutions too. `tld-swap` requires `Options.TLDs` (twister ships no TLD list) —
-it yields nothing under `Permute`.
+The nine edit-based fuzzers each make exactly one edit; `homoglyph`, `leet`, and
+`bitsquatting` are single substitutions too.
+
+**Multi-edit (opt-in, v0.2)** — each variant carries its true `EditCount`:
+
+- `tld-swap` — appends a TLD; data-gated on `Options.TLDs` (twister ships no list).
+- `combosquat` — `brand-word` / `word-brand` / `brandword` / `brand.word`; data-gated
+  on `Options.Words`.
+- `aggressive` — substitution fuzzers composed at 2..`MaxEdits` positions (`p4yp4l`);
+  data-gated on `Options.MaxEdits ≥ 2`, bounded by `MaxAggressiveVariants`.
+- `multi-homoglyph` / `homophone` — emit unconditionally from embedded tables, so
+  they are **not** in `FuzzerNames`; enable them by naming them in `Options.Fuzzers`
+  (see `ExtendedFuzzerNames`). `Options.Homophones` overrides the homophone table.
+
+The three data-gated fuzzers sit in `FuzzerNames` but stay silent until their option
+is set, so `Permute` (and any empty-`Fuzzers` call) never emits them.
 
 ## CLI
 
 ```
-twister permute [-f a,b,c] [-tld com,net,org] [labels...]
+twister permute [-f a,b,c] [-tld com,net,org] [-words login,secure] [-maxedits 2] [labels...]
 twister version
 ```
 
 - `-f` — comma-separated fuzzer subset (default all).
 - `-tld` — comma-separated TLDs for `tld-swap`.
+- `-words` — comma-separated keywords for `combosquat`.
+- `-maxedits` — max positions `aggressive` substitutes at once (≥2 turns it on).
 - Labels are the arguments, or one per line on **stdin** if none are given.
-- Output: one line per variant — `label⇥variant⇥fuzzer`.
+- Output: one line per variant — `label⇥variant⇥fuzzer⇥editcount`.
 
 ```sh
-twister permute paypal                          # every technique
+twister permute paypal                          # every default technique
 twister permute -f homoglyph,omission paypal    # just two techniques
 twister permute -tld com,net,co paypal          # include tld-swap
+twister permute -words login,secure -maxedits 2 paypal   # combosquat + aggressive
 printf 'paypal\ngoogle\n' | twister permute      # labels on stdin
 ```
 

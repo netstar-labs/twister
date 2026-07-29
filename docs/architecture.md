@@ -22,18 +22,20 @@ network.
 
 The seed is lower-cased and trimmed, then decoded to `[]rune` once and shared
 (read-only) with every fuzzer, so Unicode is handled a rune at a time rather than a
-byte at a time. Each fuzzer is a `func([]rune, Options) []string` returning raw
-candidate labels; the dispatcher owns correctness of the *set* (dedup, seed
-exclusion, ordering) so the fuzzers stay trivially simple.
+byte at a time. Each core fuzzer is a `func([]rune, Options) []string` returning raw candidate
+labels (the dispatcher tags them `EditCount 1`); a multi-edit extension in
+`extRegistry` is a `func([]rune, Options) []rawVariant` and carries its own
+per-variant edit count. Either way the dispatcher owns correctness of the *set*
+(dedup, seed exclusion, ordering) so the fuzzers stay trivially simple.
 
 ## Subsystems
 
 | Piece | Responsibility |
 |---|---|
 | `twister.go` | The public API (`Variant`, `Options`, `Permute`, `PermuteWith`), the fuzzer `registry`/`extRegistry`, `FuzzerNames`/`ExtendedFuzzerNames`, and the dedup/sort dispatch. |
-| `fuzzers.go` | The thirteen single-edit core fuzzers and the four rune-edit helpers (`withDeleted`/`withInserted`/`withReplaced`/`withSwapped`), each returning a fresh string. |
-| `extended.go` | The four opt-in **multi-edit** fuzzers (`combosquat`, `aggressive`, `multi-homoglyph`, `homophone`), their `extRegistry`, and their helpers (combination/product enumeration, `osaDistance`). |
-| `tables.go` | The four embedded data tables: QWERTY key adjacency, the single-rune homoglyph confusables map, the multi-rune `multiHomoglyphs` sequence map, and the `homophones` sound-alike map. |
+| `fuzzers.go` | The twelve single-edit core fuzzers plus `tld-swap`, and the four rune-edit helpers (`withDeleted`/`withInserted`/`withReplaced`/`withSwapped`), each returning a fresh string. |
+| `extended.go` | The four opt-in **multi-edit** fuzzers (`combosquat`, `aggressive`, `multi-homoglyph`, `homophone`), the `extRegistry`, and their helpers (combination/product enumeration, `osaDistance`). |
+| `tables.go` | The five embedded data tables: QWERTY key adjacency, the single-rune homoglyph confusables map, the `leet` numeral map, the multi-rune `multiHomoglyphs` sequence map, and the `homophones` sound-alike map. |
 
 ## The fuzzers
 
@@ -75,7 +77,7 @@ that can recover it rather than expecting a twist@1 hit.
 | Fuzzer | Turned on by | Emits | Edit count |
 |---|---|---|---|
 | `combosquat` | `Options.Words` (keywords) | `brand-word`, `word-brand`, `brandword`, `wordbrand`, `brand.word` | runes added (>1) |
-| `aggressive` | `Options.MaxEdits ≥ 2` | substitution fuzzers composed at 2..MaxEdits positions (`p4yp4l`, `g00gl3`) | true OSA distance (2+) |
+| `aggressive` | `Options.MaxEdits ≥ 2` | substitution fuzzers composed at 2..MaxEdits positions (`p4yp4l`, `g00gle`) | true OSA distance (2+) |
 | `multi-homoglyph` | named in `Options.Fuzzers` | `multiHomoglyphs` rules: `rn→m`, `vv→w`, `cl→d`, `nn→m`, `m→rn` | 2 |
 | `homophone` | named in `Options.Fuzzers` (`Options.Homophones` overrides the table) | sound-alike substrings: `ph↔f`, `c↔k`, `s↔z`, `ck↔k` | edit cost of the rewrite |
 
@@ -117,9 +119,9 @@ the core `transposition` fuzzer, not here.
 - **No resolution / enrichment** — no DNS, whois, geoip, MX, banners, ports. That is
   the networked half of squat-hunting and a consumer's job; twister never touches the
   network.
-- **No dictionary / keyword / combosquat** (`paypal-secure`) — a different signal;
-  add an optional fuzzer later if a wordlist is supplied.
-- **No homophone / plural / common-misspelling** dictionaries — data-heavy; deferred.
+- **No plural / common-misspelling dictionaries** — data-heavy and low-signal;
+  deferred. (combosquat and homophone, once listed here, shipped in the v0.2
+  opt-in layer above.)
 - **No punycode/IDN encoding** — homoglyphs emit Unicode; leave punycode to the
   caller.
 - **No scoring / ranking** — twister enumerates; weighting is the consumer's, or a

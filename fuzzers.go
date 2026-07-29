@@ -107,24 +107,19 @@ func fuzzSubdomain(r []rune, _ Options) []string {
 	return eachSeparator(r, '.', "-.")
 }
 
-const vowels = "aeiou"
-
-func isVowel(c rune) bool { return strings.ContainsRune(vowels, c) }
+// vowelSwaps maps each vowel to the other four — the vowel-swap substitution
+// table, so the fuzzer is one line through the shared eachReplacement kernel.
+var vowelSwaps = map[rune][]rune{
+	'a': {'e', 'i', 'o', 'u'},
+	'e': {'a', 'i', 'o', 'u'},
+	'i': {'a', 'e', 'o', 'u'},
+	'o': {'a', 'e', 'i', 'u'},
+	'u': {'a', 'e', 'i', 'o'},
+}
 
 // fuzzVowelSwap replaces each vowel with each other vowel.
 func fuzzVowelSwap(r []rune, _ Options) []string {
-	var out []string
-	for i := range r {
-		if !isVowel(r[i]) {
-			continue
-		}
-		for _, v := range vowels {
-			if v != r[i] {
-				out = append(out, withReplaced(r, i, v))
-			}
-		}
-	}
-	return out
+	return eachReplacement(r, func(c rune) []rune { return vowelSwaps[c] })
 }
 
 // fuzzHomoglyph substitutes each character with each of its single-rune Unicode
@@ -164,19 +159,21 @@ func fuzzBitsquatting(r []rune, _ Options) []string {
 
 // fuzzTLDSwap appends each caller-supplied TLD (google + {net,org} →
 // google.net, google.org). twister ships no TLD list, so this yields nothing
-// unless [Options.TLDs] is set.
-func fuzzTLDSwap(r []rune, o Options) []string {
+// unless [Options.TLDs] is set. Appending ".tld" is not a single edit, so it is a
+// data-gated extension (extRegistry) and each variant carries its true edit count
+// (1 for the dot + one per TLD rune) rather than the core's implicit 1.
+func fuzzTLDSwap(r []rune, o Options) []rawVariant {
 	if len(o.TLDs) == 0 {
 		return nil
 	}
 	label := string(r)
-	out := make([]string, 0, len(o.TLDs))
+	out := make([]rawVariant, 0, len(o.TLDs))
 	for _, t := range o.TLDs {
 		t = strings.ToLower(strings.Trim(strings.TrimSpace(t), "."))
 		if t == "" {
 			continue
 		}
-		out = append(out, label+"."+t)
+		out = append(out, rawVariant{name: label + "." + t, edits: 1 + len([]rune(t))})
 	}
 	return out
 }

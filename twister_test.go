@@ -232,16 +232,21 @@ func editCounts(label string, o Options) map[string]int {
 // is the tight dist-1 set — every variant is exactly one edit, no extension leaks in.
 func TestCoreIsSingleEdit(t *testing.T) {
 	for _, seed := range []string{"paypal", "google", "amazon", "verylongbrandname"} {
-		// Even with extension data present, empty Fuzzers still only runs the
-		// data-gated members of FuzzerNames; core variants stay EditCount 1 and the
-		// unconditional extensions never appear.
+		// With only TLDs supplied, the data-gated tld-swap appears (carrying its true
+		// multi-edit EditCount), but the unconditional extensions never do, and every
+		// non-tld-swap variant is a single edit. NOTE the dist-1 guarantee is scoped to
+		// Permute / zero-options — supplying Words or MaxEdits deliberately injects
+		// combosquat/aggressive multi-edit variants (asserted in their own tests).
 		for _, v := range PermuteWith(seed, Options{TLDs: []string{"com"}}) {
 			if v.Fuzzer == "multi-homoglyph" || v.Fuzzer == "homophone" {
 				t.Errorf("%s: extension %q ran under empty Fuzzers", seed, v.Fuzzer)
 			}
-			// tld-swap appends a TLD (not an edit fuzzer); everything else must be 1.
+			// tld-swap appends a TLD (a genuine multi-edit); everything else must be 1.
 			if v.Fuzzer != "tld-swap" && v.EditCount != 1 {
 				t.Errorf("%s: %q (%s) has EditCount %d, want 1 in the core set", seed, v.Name, v.Fuzzer, v.EditCount)
+			}
+			if v.Fuzzer == "tld-swap" && v.EditCount < 2 {
+				t.Errorf("%s: tld-swap %q has EditCount %d, want its true (>1) distance", seed, v.Name, v.EditCount)
 			}
 		}
 	}
@@ -364,8 +369,9 @@ func TestAggressive(t *testing.T) {
 }
 
 // TestAggressiveCap forces the combinatorial cap and asserts the output stays
-// bounded and deterministic. It intentionally logs the cap notice (no silent
-// truncation) — that line on stderr during the test is expected.
+// bounded and deterministic. The cap is silent — MaxAggressiveVariants is a public
+// constant, not a log line (a library must not write to the global logger) — so the
+// test asserts the bound, not any stderr output.
 func TestAggressiveCap(t *testing.T) {
 	o := Options{Fuzzers: []string{"aggressive"}, MaxEdits: 3}
 	a := PermuteWith("verylongbrandname", o)
