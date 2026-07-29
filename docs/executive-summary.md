@@ -29,6 +29,9 @@ no DNS, whois, geoip, or network of any kind. That networked half belongs to a
 consumer. twister is pure generation: a label in, a candidate set out.
 
 **Shape.** Two public entry points — `Permute(label)` and `PermuteWith(label,
-Options)` — returning `[]Variant{Name, Fuzzer}`, deduplicated, seed-excluded, and
-sorted. Thirteen fuzzers, standard library only, small embedded data tables. A thin
-`twister permute` CLI wraps it for shell use.
+Options)` — returning `[]Variant{Name, Fuzzer, EditCount}`, deduplicated,
+seed-excluded, and sorted. Twelve single-edit fuzzers form the dist-1 core that
+`Permute` returns, alongside `tld-swap` and four opt-in, off-by-default multi-edit
+extensions (combosquat, aggressive multi-substitution, multi-homoglyph, homophone)
+that each tag their variants with a true edit count. Standard library only, small
+embedded data tables. A thin `twister permute` CLI wraps it for shell use.
