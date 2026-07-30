@@ -2,8 +2,8 @@
 
 Typosquat **permutation generation** for Go — **hand it a label and it enumerates
 the look-alikes a squatter might register**, pure standard library, no
-dependencies. It is the counter to the sibling `twist`: where `twist` *detects* a
-near-miss, twister *generates* the candidates. twist ↔ twister, detect ↔ generate —
+dependencies. It is the counter to the sibling `snare`: where `snare` *detects* a
+near-miss, twister *generates* the candidates. snare ↔ twister, detect ↔ generate —
 the same edit-distance space, walked in opposite directions.
 
 ```
@@ -14,7 +14,7 @@ seed label ─▶ PermuteWith ─▶ fan out over fuzzers ─▶ dedup + drop se
 ```
 
 Every edit-based fuzzer makes exactly one edit, so each variant is one
-Damerau-Levenshtein step from the seed — and `twist` detects it as a near-miss, a
+Damerau-Levenshtein step from the seed — and `snare` detects it as a near-miss, a
 clean generate → detect round-trip (see [diff/](diff/)).
 
 An opt-in v0.2 layer adds four **multi-edit** fuzzers — combosquat
@@ -75,7 +75,7 @@ printf 'paypal\ngoogle\n' | go run ./app/twister permute -tld com,net
 | [tables.go](tables.go) | the five embedded tables: QWERTY adjacency, homoglyph, leet numeral, multi-homoglyph, and homophone |
 | [doc.go](doc.go) | package doc — the name metaphor (generates, not detects) and the pure-generation scope |
 | [app/twister/](app/twister/main.go) | the CLI — `permute` · `version` |
-| [diff/](diff/README.md) | the twister ↔ twist differential harness (nested module, keeps the root zero-dep) |
+| [diff/](diff/README.md) | the twister ↔ snare differential harness (nested module, keeps the root zero-dep) |
 
 ## Notes
 

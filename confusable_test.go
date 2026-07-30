@@ -29,7 +29,7 @@ func TestConfusableClass(t *testing.T) {
 }
 
 // TestConfusableFeedsWeightedCost documents the intended use: the class maps to a
-// substitution cost so a caller can build twist.NearestWeighted's Sub without importing
+// substitution cost so a caller can build snare.NearestWeighted's Sub without importing
 // twister's tables. Two leet/homoglyph edits stay cheap; a random edit is full price.
 func TestConfusableFeedsWeightedCost(t *testing.T) {
 	sub := func(a, b rune) float64 {

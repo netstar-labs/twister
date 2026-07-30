@@ -50,7 +50,7 @@ const MaxAggressiveVariants = 10000
 // fuzzCombosquat affixes each caller-supplied keyword into and around the brand:
 // brand-word, word-brand, brandword, wordbrand, and brand.word. It is the dominant
 // real-world phishing class and a composition, not an edit — detected by token
-// containment / n-gram similarity, not twist — so every variant is tagged with the
+// containment / n-gram similarity, not snare — so every variant is tagged with the
 // count of runes it adds (>1 for any real keyword). Off unless [Options.Words] is
 // set, exactly like tld-swap is off unless [Options.TLDs] is set.
 func fuzzCombosquat(r []rune, o Options) []rawVariant {
@@ -147,7 +147,7 @@ func fuzzAggressive(r []rune, o Options) []rawVariant {
 // fuzzMultiHomoglyph applies each multi-rune confusable rule (see [multiHomoglyphs])
 // at every matching position: rn→m, vv→w, cl→d, nn→m, and the m→rn reverse. Each is
 // two edits (a substitution plus an insertion or deletion), so it is excluded from
-// the single-rune homoglyph core. Detected by skeleton equality, not twist@1.
+// the single-rune homoglyph core. Detected by skeleton equality, not snare@1.
 func fuzzMultiHomoglyph(r []rune, _ Options) []rawVariant {
 	return applySubstitutionTable(r, multiHomoglyphs)
 }
@@ -179,7 +179,7 @@ func applySubstitutionTable(r []rune, table map[string][]string) []rawVariant {
 // matching position, one rewrite per variant. The embedded [homophones] table is the
 // default; [Options.Homophones] overrides it per key. Each variant is tagged with the
 // true edit cost of its rewrite (ph↔f is 2, c↔k is 1). The class is defined by
-// phonetic equality, so it routes to a phonetic detector rather than twist@1.
+// phonetic equality, so it routes to a phonetic detector rather than snare@1.
 func fuzzHomophone(r []rune, o Options) []rawVariant {
 	table := homophones
 	if len(o.Homophones) > 0 {
@@ -313,7 +313,7 @@ func editDistance(a, b string) int {
 }
 
 // osaDistance is the optimal-string-alignment (restricted Damerau-Levenshtein)
-// distance over runes — the same metric the sibling twist uses. It counts an
+// distance over runes — the same metric the sibling snare uses. It counts an
 // adjacent transposition as one edit, so the aggressive fuzzer can tell a genuine
 // two-substitution variant (distance 2) from two substitutions that happen to swap
 // an adjacent pair (distance 1). Three-row DP; used only by the opt-in aggressive

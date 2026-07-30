@@ -1,13 +1,13 @@
-// Package diff cross-validates twister against twist: every edit-based fuzzer
-// makes exactly one Damerau-Levenshtein edit, so twist must detect each generated
+// Package diff cross-validates twister against snare: every edit-based fuzzer
+// makes exactly one Damerau-Levenshtein edit, so snare must detect each generated
 // variant as a near-miss of the seed at distance 1. This proves both libraries at
-// once — twister generates the candidate, twist confirms it is one edit away.
+// once — twister generates the candidate, snare confirms it is one edit away.
 package diff
 
 import (
 	"testing"
 
-	"github.com/netstar-labs/twist"
+	"github.com/netstar-labs/snare"
 	"github.com/netstar-labs/twister"
 )
 
@@ -24,7 +24,7 @@ var editFuzzers = []string{
 func TestGenerateThenDetect(t *testing.T) {
 	seeds := []string{"paypal", "google", "amazon", "microsoft", "cloudflare"}
 	for _, seed := range seeds {
-		set := twist.New([]string{seed})
+		set := snare.New([]string{seed})
 		for _, f := range editFuzzers {
 			for _, v := range twister.PermuteWith(seed, twister.Options{Fuzzers: []string{f}}) {
 				got, dist, ok := set.Nearest(v.Name)
@@ -56,40 +56,40 @@ func aggressive2(t *testing.T, seed string) []string {
 
 // TestMultiEditNotDetectedAtDistance1 is the per-class complement of
 // TestGenerateThenDetect: multi-edit variants are deliberately excluded from the
-// "every variant is twist@1" contract, so this documents where they actually land.
+// "every variant is snare@1" contract, so this documents where they actually land.
 //
-// twist's edit cap is length-relative (k=1 for queries of <= 6 runes, k=2 above), so
+// snare's edit cap is length-relative (k=1 for queries of <= 6 runes, k=2 above), so
 // an aggressive 2-substitution variant is:
 //   - a short brand (paypal, 6 runes): outside k=1 entirely — not detected; and
 //   - a long brand (microsoft, 9 runes): detected, but at distance 2, never 1.
 //
-// In neither case does it round-trip at twist@1 — which is exactly why the core diff
+// In neither case does it round-trip at snare@1 — which is exactly why the core diff
 // harness must not assert it does.
 func TestMultiEditNotDetectedAtDistance1(t *testing.T) {
-	// Short seed: 2-edit variants fall outside twist's k=1 budget → not a hit.
+	// Short seed: 2-edit variants fall outside snare's k=1 budget → not a hit.
 	const shortSeed = "paypal"
-	shortSet := twist.New([]string{shortSeed})
+	shortSet := snare.New([]string{shortSeed})
 	for _, name := range aggressive2(t, shortSeed) {
 		if got, dist, ok := shortSet.Nearest(name); ok && dist == 1 {
-			t.Errorf("aggressive 2-sub %q of %q was detected at twist@1 (%q, dist %d); the multi-edit class must not round-trip at distance 1",
+			t.Errorf("aggressive 2-sub %q of %q was detected at snare@1 (%q, dist %d); the multi-edit class must not round-trip at distance 1",
 				name, shortSeed, got, dist)
 		}
 	}
 
 	// Long seed: k=2, so the class IS recoverable — but at distance 2, not 1.
 	const longSeed = "microsoft"
-	longSet := twist.New([]string{longSeed})
+	longSet := snare.New([]string{longSeed})
 	sawDist2 := false
 	for _, name := range aggressive2(t, longSeed) {
 		got, dist, ok := longSet.Nearest(name)
 		if ok && dist == 1 {
-			t.Errorf("aggressive 2-sub %q of %q detected at twist@1; must be distance 2, not 1", name, longSeed)
+			t.Errorf("aggressive 2-sub %q of %q detected at snare@1; must be distance 2, not 1", name, longSeed)
 		}
 		if ok && got == longSeed && dist == 2 {
 			sawDist2 = true
 		}
 	}
 	if !sawDist2 {
-		t.Errorf("expected at least one aggressive 2-sub variant of %q to be detected by twist at distance 2", longSeed)
+		t.Errorf("expected at least one aggressive 2-sub variant of %q to be detected by snare at distance 2", longSeed)
 	}
 }

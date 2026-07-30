@@ -100,10 +100,10 @@ build/twister                 # package under build/install/, no transmit
 build/twister user@host       # package, scp, and install over ssh
 ```
 
-## Cross-validation with twist
+## Cross-validation with snare
 
-The [diff/](../diff/) nested module round-trips twister through `twist`: every
-edit-based variant of a seed must be detected by `twist` as a near-miss at distance
+The [diff/](../diff/) nested module round-trips twister through `snare`: every
+edit-based variant of a seed must be detected by `snare` as a near-miss at distance
 1. It is a separate module so the root stays zero-dependency; run it with both repos
 checked out as siblings:
 

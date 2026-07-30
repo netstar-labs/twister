@@ -72,7 +72,7 @@ The core above is deliberately single-edit, and `Permute` stays that tight dist-
 set. Four additional fuzzers (in `extended.go`) generate **multi-edit** look-alikes.
 Every one is OFF by default and each variant carries its true `EditCount` (the
 Damerau-Levenshtein distance from the seed), so a consumer routes it to the detector
-that can recover it rather than expecting a twist@1 hit.
+that can recover it rather than expecting a snare@1 hit.
 
 | Fuzzer | Turned on by | Emits | Edit count |
 |---|---|---|---|
@@ -107,7 +107,7 @@ the core `transposition` fuzzer, not here.
   `addition`).
 - **Runes, not bytes.** Homoglyphs emit non-ASCII, and edit distance is defined over
   runes, so the whole engine works on `[]rune`. That keeps every homoglyph a *single*
-  edit and matches how `twist` counts.
+  edit and matches how `snare` counts.
 - **Output is linear per core fuzzer.** Each single-edit fuzzer emits O(len ×
   small-constant) candidates; there is no combinatorial blow-up, and generation is
   microsecond-class. The one exception is the opt-in `aggressive` fuzzer, whose
@@ -125,4 +125,4 @@ the core `transposition` fuzzer, not here.
 - **No punycode/IDN encoding** — homoglyphs emit Unicode; leave punycode to the
   caller.
 - **No scoring / ranking** — twister enumerates; weighting is the consumer's, or a
-  `twist` round-trip (generate, then score each variant against the brand).
+  `snare` round-trip (generate, then score each variant against the brand).

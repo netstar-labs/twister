@@ -3,7 +3,7 @@
 Four-dimension adversarial audit (A simpler · B dedup · C correctness+security ·
 D doc-drift) over the v0.2 generation-extensions branch, 2026-07. Findings verified
 against the code, then repaired in the same branch and re-validated (gofmt / build /
-vet / `-race` / staticcheck clean; test + `diff/` twist round-trip green; aggressive
+vet / `-race` / staticcheck clean; test + `diff/` snare round-trip green; aggressive
 blowup re-measured bounded). `*` = failure reproduced against a copy.
 
 ## CONFIRMED — fixed
@@ -81,6 +81,6 @@ not any stderr.
 - **Aggressive "combinatorial DoS"** `*` — the blowup reproduces in principle but is
   bounded by `MaxAggressiveVariants` (<40ms even at `MaxEdits=1000`); not a vuln. Kept.
 - **`diff/` harness "misses multi-edit variants"** — correct and intended: the
-  round-trip asserts twist@1 detection, so its `editFuzzers` list deliberately
+  round-trip asserts snare@1 detection, so its `editFuzzers` list deliberately
   excludes `tld-swap` and all four multi-edit extensions (`TestMultiEditNotDetectedAtDistance1`
   pins this). Kept.

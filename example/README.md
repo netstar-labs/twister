@@ -16,5 +16,5 @@ go run ./app/twister permute -f homoglyph,omission paypal
 printf 'paypal\ngoogle\n' | go run ./app/twister permute -tld com,net
 ```
 
-The [../diff/](../diff/) module cross-validates twister against `twist` — every
+The [../diff/](../diff/) module cross-validates twister against `snare` — every
 edit-based variant is detected as a distance-1 near-miss.

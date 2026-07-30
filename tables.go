@@ -66,7 +66,7 @@ var homoglyphs = map[rune][]rune{
 // leet maps an ASCII letter to its leetspeak numeral — the "reads as" look-alike
 // class (paypal → p4ypal), distinct from homoglyph's "renders identically". One
 // substitution per position keeps every leet variant a single edit from the seed, so
-// twist detects it at distance 1. The digits that are also visual confusables (o→0,
+// snare detects it at distance 1. The digits that are also visual confusables (o→0,
 // i/l→1, s→5) appear here for a complete leet alphabet; dedup tags those with the
 // earlier fuzzer (homoglyph). Embedded, not a dependency.
 var leet = map[rune][]rune{
@@ -92,7 +92,7 @@ var multiHomoglyphs = map[string][]string{
 // [Options.Homophones]. A rewrite's edit count is the Levenshtein distance between
 // the key and its replacement (ph↔f is two edits, c↔k is one), tagged truthfully on
 // each variant. The class is defined by phonetic equality, not edit distance, so it
-// routes to a phonetic detector rather than twist@1. Embedded, not a dependency.
+// routes to a phonetic detector rather than snare@1. Embedded, not a dependency.
 var homophones = map[string][]string{
 	"ph": {"f"},       // "phone" → "fone"
 	"f":  {"ph"},      // "fon" → "phon"
