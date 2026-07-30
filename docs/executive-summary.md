@@ -1,7 +1,7 @@
 # twister — executive summary
 
 **What it is.** A pure-Go, zero-dependency library that generates the typosquat
-permutations of a domain label — the offensive-side complement to `twist`. Given a
+permutations of a domain label — the offensive-side complement to `snare`. Given a
 name it enumerates the look-alike variants an attacker might register, each tagged
 with the technique that produced it.
 
@@ -12,16 +12,16 @@ half as a clean, embeddable Go library: deterministic, network-free, and testabl
 any consumer can wrap the networked stages it needs around a permutation engine it can
 trust and unit-test.
 
-**How it fits.** twister and `twist` are a matched pair on the same edit-distance
+**How it fits.** twister and `snare` are a matched pair on the same edit-distance
 lineage, pointing opposite ways:
 
 - **twister** *generates* — "what could squat my brand?" — proactive, produces the
   candidate space.
-- **twist** *detects* — "is this observed name a near-miss of a known brand?" —
+- **snare** *detects* — "is this observed name a near-miss of a known brand?" —
   reactive, over a target list.
 
 Because every edit-based fuzzer makes exactly one edit, each generated variant is
-one edit-distance step from the seed and is detected by `twist` at distance 1 — a
+one edit-distance step from the seed and is detected by `snare` at distance 1 — a
 generate → detect round-trip that cross-validates both libraries at once.
 
 **The boundary.** twister does no resolution, registration, scoring, or enrichment —

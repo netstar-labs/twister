@@ -1,9 +1,9 @@
 // Package twister generates typosquat permutations of a domain label: hand it a
 // registrable label and it enumerates the look-alikes a squatter might register —
 // omissions, insertions, repetitions, transpositions, keyboard slips, homoglyphs,
-// leetspeak digits, bit flips, TLD swaps. twister is the counter to twist: twister *generates* the
-// look-alike permutations and twist *detects* them, so the two are a matched pair —
-// twist ↔ twister, detect ↔ generate, the same edit-distance space walked in
+// leetspeak digits, bit flips, TLD swaps. twister is the counter to snare: twister *generates* the
+// look-alike permutations and snare *detects* them, so the two are a matched pair —
+// snare ↔ twister, detect ↔ generate, the same edit-distance space walked in
 // opposite directions.
 //
 // twister is pure generation and nothing else. It takes a label and returns a set
@@ -20,7 +20,7 @@
 // domain into label + eTLD, permutes the label, and — for the tld-swap fuzzer —
 // supplies its own TLD list, since twister ships none. Every edit-based fuzzer
 // makes exactly one edit, so each such variant is one Damerau-Levenshtein step
-// from the seed and is detected as a near-miss by the sibling twist package — a
+// from the seed and is detected as a near-miss by the sibling snare package — a
 // clean generate → detect round-trip. (tld-swap, which appends a TLD, is not an
 // edit-based fuzzer.)
 //

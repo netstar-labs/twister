@@ -18,12 +18,12 @@ func Confusable(a, b rune) bool {
 //
 // It exposes the same per-rune substitution data the aggressive fuzzer composes
 // internally ([substitutionCandidates]), so a consumer can build a confusability-weighted
-// substitution cost for twist.NearestWeighted — a homoglyph or leet swap priced cheap, a
-// random swap full price — without re-curating the tables. twist stays zero-dependency by
+// substitution cost for snare.NearestWeighted — a homoglyph or leet swap priced cheap, a
+// random swap full price — without re-curating the tables. snare stays zero-dependency by
 // taking that cost function from its caller; this is the data that function reads.
 //
 // Inputs are matched against the tables' lowercase-ASCII keys, so normalize (lower-case)
-// the runes first, exactly as twist and twister callers already do.
+// the runes first, exactly as snare and twister callers already do.
 func ConfusableClass(a, b rune) string {
 	if a == b {
 		return ""
